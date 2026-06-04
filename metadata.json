@@ -1,0 +1,6 @@
+{
+  "name": "Moscovium115",
+  "description": "A secure global escrow marketplace for listing, managing, and buying physical crafts, on-demand services, and digital downloads.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
