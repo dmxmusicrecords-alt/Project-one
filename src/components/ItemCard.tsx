@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, ShoppingCart, ArrowUpRight, Zap, Play, FileCode2 } from 'lucide-react';
 import { Item } from '../types';
+import { playCashInSound } from '../lib/audio';
 
 interface ItemCardProps {
   key?: string;
@@ -32,6 +33,11 @@ export default function ItemCard({ item, onViewDetails, onAddToCart, currency }:
       case 'digital': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
       default: return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     }
+  };
+
+  const handleAddToCartWithSound = (e: React.MouseEvent) => {
+    playCashInSound(); // Ka-cheng sound when adding item to cart
+    onAddToCart(item, e);
   };
 
   return (
@@ -114,7 +120,7 @@ export default function ItemCard({ item, onViewDetails, onAddToCart, currency }:
           </div>
 
           <button
-            onClick={(e) => onAddToCart(item, e)}
+            onClick={handleAddToCartWithSound}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 border border-slate-200 hover:border-red-100 transition-all shadow-sm shrink-0"
             title="Add to Cart"
           >

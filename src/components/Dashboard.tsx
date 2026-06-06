@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wallet, DollarSign, PlusCircle, Grid, FileText, CheckCircle, 
   Calendar, TrendingUp, Send, AlertCircle, Trash2, ArrowUpRight, Megaphone, X, CreditCard, Save
 } from 'lucide-react';
 import { Item, SellerStats, WithdrawalRequest, Order } from '../types';
 import { CATEGORIES } from '../data';
-import { playCashRegisterSound, playNotificationSound } from '../lib/audio';
+import { playCashInSound, playCashOutSound } from '../lib/audio';
 import { MoscoviumAd } from './MoscoviumAds';
 
 interface DashboardProps {
@@ -66,6 +66,8 @@ export default function Dashboard({
   const [promoDesc, setPromoDesc] = useState('');
   const [promoCta, setPromoCta] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(false);
+  // Promo daily rate (USD) — default: product $0.50, shop $1.00
+  const [promoDailyRate, setPromoDailyRate] = useState<number>(0.5);
 
   // Catalog Filter / Multi-Shop Campaign selector states
   const [selectedShopFilter, setSelectedShopFilter] = useState<string>('mine');
@@ -116,7 +118,7 @@ export default function Dashboard({
       withdrawals: [request, ...sellerStats.withdrawals]
     });
 
-    playCashRegisterSound();
+    playCashOutSound();
 
     setWithdrawAmount('');
     setWithdrawAccount('');
@@ -153,7 +155,7 @@ export default function Dashboard({
 
     onAddListing(newItem);
     setListSuccess(true);
-    playCashRegisterSound();
+    playCashInSound();
     
     // Reset Form
     setNewTitle('');
@@ -176,13 +178,26 @@ export default function Dashboard({
     setPromoDesc(item.description);
     setPromoCta(`Inspect Offer (${formatPrice(item.price)})`);
     setPromoSuccess(false);
+    // ensure daily rate default aligns with promo type
+    setPromoDailyRate(0.5);
   };
+
+  useEffect(() => {
+    // When promo type toggles, reset daily rate to sensible default
+    if (promoType === 'shop') setPromoDailyRate(1.0);
+    else setPromoDailyRate(0.5);
+  }, [promoType]);
 
   const handleConfirmPromotionWithChoice = (isPaid: boolean) => {
     if (!promotingItem) return;
 
-    const dailyRate = promoType === 'product' ? 0.5 : 1.0;
     const days = promoDurationDays || 7;
+    const minRate = promoType === 'shop' ? 1.0 : 0.5;
+    const dailyRate = Number(promoDailyRate);
+    if (isNaN(dailyRate) || dailyRate < minRate || dailyRate > 100) {
+      alert(`Daily rate must be between $${minRate.toFixed(2)} and $100.00`);
+      return;
+    }
     const totalCost = dailyRate * days;
 
     if (isPaid && sellerStats.wallet < totalCost) {
@@ -227,9 +242,9 @@ export default function Dashboard({
           ...sellerStats,
           wallet: Number((sellerStats.wallet - totalCost).toFixed(2))
         });
-        playCashRegisterSound();
+        playCashOutSound(); // Money leaving for promotion
       } else {
-        playNotificationSound();
+        playCashInSound(); // Free promotion activated
       }
 
       setPromoSuccess(true);
@@ -287,7 +302,7 @@ export default function Dashboard({
   const totalCampaignClicks = userPromotedAds.reduce((sum, ad) => sum + ad.clicks, 0);
   const totalInvestedFunds = userPromotedAds.reduce((sum, ad) => {
     if (ad.isActive === false) return sum;
-    const rate = ad.dailyRate || (ad.tag === 'Certified Shop' ? 1.0 : 0.5);
+    const rate = Math.min(100, ad.dailyRate ?? (ad.tag === 'Certified Shop' ? 1.0 : 0.5));
     const duration = ad.durationDays || 7;
     return sum + (rate * duration);
   }, 0);
@@ -298,14 +313,14 @@ export default function Dashboard({
   // Dynamic daily active burn
   const dailyActiveBurn = userPromotedAds.reduce((sum, ad) => {
     if (ad.isActive === false) return sum;
-    return sum + (ad.dailyRate || (ad.tag === 'Certified Shop' ? 1.0 : 0.5));
+    return sum + Math.min(100, (ad.dailyRate ?? (ad.tag === 'Certified Shop' ? 1.0 : 0.5)));
   }, 0);
 
   const handlePayAndLaunchPromo = (adId: string) => {
     const targetAd = ads.find(a => a.id === adId);
     if (!targetAd) return;
 
-    const rate = targetAd.dailyRate || 0.5;
+    const rate = Math.min(100, targetAd.dailyRate ?? 0.5);
     const duration = targetAd.durationDays || 7;
     const cost = rate * duration;
 
@@ -330,7 +345,7 @@ export default function Dashboard({
       onUpdateAds(updated);
     }
 
-    playCashRegisterSound();
+    playCashOutSound();
     alert(`Escrow Transaction Succeeded! Credited ${formatPrice(cost)} to the advertising engine. Campaign "${targetAd.title}" is now immediately active in the sponsors carousel!`);
   };
 
@@ -338,7 +353,7 @@ export default function Dashboard({
     if (onUpdateAds) {
       const updated = ads.map(ad => ad.id === adId ? { ...ad, clicks: ad.clicks + Math.floor(Math.random() * 3) + 1 } : ad);
       onUpdateAds(updated);
-      playNotificationSound();
+      playCashInSound(); // Simulated click = potential earnings
     }
   };
 
@@ -356,7 +371,7 @@ export default function Dashboard({
       return;
     }
 
-    const rate = adToKill.dailyRate || (adToKill.tag === 'Certified Shop' ? 1.0 : 0.5);
+    const rate = Math.min(100, adToKill.dailyRate ?? (adToKill.tag === 'Certified Shop' ? 1.0 : 0.5));
     const duration = adToKill.durationDays || 7;
     const cost = rate * duration;
     
@@ -636,7 +651,7 @@ export default function Dashboard({
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-1">
                     {userPromotedAds.map(ad => {
-                      const adCost = (ad.durationDays || 7) * (ad.dailyRate || 0.5);
+                      const adCost = (ad.durationDays || 7) * Math.min(100, (ad.dailyRate ?? 0.5));
                       const isUnpaid = ad.isActive === false;
                       return (
                         <div key={ad.id} className={`bg-slate-950/40 border p-4 rounded-2xl flex flex-col justify-between gap-4 hover:bg-slate-950/80 transition-all relative group/ad ${
@@ -1281,6 +1296,23 @@ export default function Dashboard({
                   </div>
                 </div>
 
+                {/* Daily rate input for campaign (enforced range) */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Daily Promotion Rate (USD)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={promoType === 'shop' ? 1.0 : 0.5}
+                      max={100}
+                      step={0.25}
+                      value={promoDailyRate}
+                      onChange={(e) => setPromoDailyRate(Number(e.target.value))}
+                      className="w-32 rounded-xl border border-slate-300 p-2.5 text-slate-900 bg-white text-sm font-mono"
+                    />
+                    <div className="text-xs text-slate-500">Min: ${promoType === 'shop' ? '1.00' : '0.50'} — Max: $100.00</div>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5 text-left">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Advertisement Slogan / Tagline</label>
                   <input 
@@ -1328,7 +1360,7 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">Daily Promotion Rate:</span>
                     <span className="font-bold font-mono text-slate-800">
-                      {formatPrice(promoType === 'product' ? 0.5 : 1.0)} per day
+                      {formatPrice(promoDailyRate)} per day
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs border-b border-amber-200/50 pb-2 mb-1.5">
@@ -1338,12 +1370,12 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-bold text-slate-855">Total Campaign Budget:</span>
                     <span className="font-black font-mono text-emerald-800 text-base">
-                      {formatPrice((promoType === 'product' ? 0.5 : 1.0) * promoDurationDays)}
+                      {formatPrice(promoDailyRate * promoDurationDays)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] pt-1.5 text-slate-500 border-t border-dashed border-amber-200">
                     <span>Available Wallet Balance:</span>
-                    <span className={`font-mono font-bold ${sellerStats.wallet < ((promoType === 'product' ? 0.5 : 1.0) * promoDurationDays) ? 'text-red-650' : 'text-emerald-700'}`}>
+                    <span className={`font-mono font-bold ${sellerStats.wallet < (promoDailyRate * promoDurationDays) ? 'text-red-650' : 'text-emerald-700'}`}>
                       {formatPrice(sellerStats.wallet)}
                     </span>
                   </div>

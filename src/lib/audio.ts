@@ -1,4 +1,5 @@
 let audioCtx: AudioContext | null = null;
+let cachedAudioBuffer: AudioBuffer | null = null;
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -10,163 +11,68 @@ function getAudioContext() {
   return audioCtx;
 }
 
-/**
- * Synthesizes a premium, sparkling "Cash-In" sound.
- * Designed as an ascending cascade of metallic coins and bright, sparkling chimes
- * to audibly reinforce receiving funds, earnings, or refunds.
- */
-export function playCashInSound() {
+async function loadTransactionAudio(): Promise<AudioBuffer> {
+  if (cachedAudioBuffer) {
+    console.log("Using cached audio buffer");
+    return cachedAudioBuffer;
+  }
+
   try {
     const ctx = getAudioContext();
-    const now = ctx.currentTime;
-
-    // A fast, cheerful ascending melodic arpeggio (C6 -> E6 -> G6 -> C7)
-    // with staggered starting times to create a rolling metal chime effect.
-    const notes = [
-      { freq: 1046.50, delay: 0.00, duration: 0.4 }, // C6
-      { freq: 1318.51, delay: 0.06, duration: 0.4 }, // E6
-      { freq: 1567.98, delay: 0.12, duration: 0.5 }, // G6
-      { freq: 2093.00, delay: 0.18, duration: 0.7 }, // C7
-    ];
-
-    notes.forEach((note, idx) => {
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-
-      // Alternate types for a richer metallic spectrum mixture
-      osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
-      osc.frequency.setValueAtTime(note.freq, now + note.delay);
-      // Slight pitch glide upwards for premium bubble chime styling
-      osc.frequency.exponentialRampToValueAtTime(note.freq * 1.05, now + note.delay + note.duration);
-
-      gainNode.gain.setValueAtTime(0, now + note.delay);
-      gainNode.gain.linearRampToValueAtTime(0.08, now + note.delay + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + note.delay + note.duration);
-
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      osc.start(now + note.delay);
-      osc.stop(now + note.delay + note.duration + 0.05);
-    });
-
-    // Subtly high-passed white noise sparks simulating coin jingling
-    const numCoins = 3;
-    for (let i = 0; i < numCoins; i++) {
-      const coinDelay = i * 0.07;
-      const duration = 0.08;
-      const bufferSize = ctx.sampleRate * duration;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let j = 0; j < bufferSize; j++) {
-        data[j] = Math.random() * 2 - 1;
-      }
-
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.setValueAtTime(5000 + (i * 800), now + coinDelay);
-
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.04, now + coinDelay);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + coinDelay + duration);
-
-      noise.connect(filter);
-      filter.connect(noiseGain);
-      noiseGain.connect(ctx.destination);
-
-      noise.start(now + coinDelay);
-      noise.stop(now + coinDelay + duration + 0.02);
+    // Load the custom transaction sound from the public assets folder.
+    // Use the root-relative `/assets/` path so it works in dev and when deployed to a custom domain.
+    const audioUrl = '/assets/transaction-sound.mpeg';
+    console.log("Fetching audio from:", audioUrl);
+    
+    const response = await fetch(audioUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-
+    
+    console.log("Audio file fetched, decoding...");
+    const arrayBuffer = await response.arrayBuffer();
+    console.log("Array buffer size:", arrayBuffer.byteLength);
+    
+    cachedAudioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    console.log("Audio decoded successfully");
+    return cachedAudioBuffer;
   } catch (err) {
-    console.warn("Failed to play cash-in sound:", err);
+    console.error("Failed to load transaction audio:", err);
+    throw err;
+  }
+}
+
+function playTransactionSound() {
+  try {
+    const ctx = getAudioContext();
+    loadTransactionAudio().then((buffer) => {
+      console.log("Playing custom transaction sound");
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    }).catch(err => {
+      console.error("Failed to play transaction sound:", err);
+    });
+  } catch (err) {
+    console.error("Exception in playTransactionSound:", err);
   }
 }
 
 /**
- * Synthesizes a highly realistic "Cash-Out" sound.
- * Emulates the mechanical drawer closing latch and double click ('ka-chunk')
- * followed immediately by a smooth, descending pitch sweep representing funds spent,
- * debited, or transferred down the pipeline.
+ * Plays the custom transaction sound.
+ * This is used for "Cash-In" events (successful transactions, items added to cart).
+ */
+export function playCashInSound() {
+  playTransactionSound();
+}
+
+/**
+ * Plays the custom transaction sound.
+ * This is used for "Cash-Out" events (items removed from cart, checkout initiated).
  */
 export function playCashOutSound() {
-  try {
-    const ctx = getAudioContext();
-    const now = ctx.currentTime;
-
-    // --- Part 1: Double Mechanical Drawer Click ("Ka-chunk") ---
-    // Two rapid impulses of low-passed noise to represent structural hardware latch engagement
-    const triggerTimes = [0.00, 0.06];
-    triggerTimes.forEach((t) => {
-      const duration = 0.04;
-      const bufferSize = ctx.sampleRate * duration;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let j = 0; j < bufferSize; j++) {
-        data[j] = Math.random() * 2 - 1;
-      }
-
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(800, now + t);
-      filter.Q.setValueAtTime(4, now + t);
-
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.12, now + t);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + t + duration);
-
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      noise.start(now + t);
-      noise.stop(now + t + duration + 0.01);
-    });
-
-    // Low wooden mechanical thump accentuating the drawer closure
-    const thump = ctx.createOscillator();
-    const thumpGain = ctx.createGain();
-    thump.type = 'triangle';
-    thump.frequency.setValueAtTime(140, now);
-    thump.frequency.exponentialRampToValueAtTime(60, now + 0.15);
-
-    thumpGain.gain.setValueAtTime(0.18, now);
-    thumpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-
-    thump.connect(thumpGain);
-    thumpGain.connect(ctx.destination);
-    thump.start(now);
-    thump.stop(now + 0.18);
-
-    // --- Part 2: Descending Debit Glide ("Swoosh") ---
-    // A soft, descending sine glide representing funds departing the wallet
-    const glide = ctx.createOscillator();
-    const glideGain = ctx.createGain();
-
-    glide.type = 'sine';
-    glide.frequency.setValueAtTime(880, now + 0.08);
-    // Smooth pitch sweep downwards
-    glide.frequency.exponentialRampToValueAtTime(220, now + 0.45);
-
-    glideGain.gain.setValueAtTime(0, now + 0.08);
-    glideGain.gain.linearRampToValueAtTime(0.12, now + 0.12);
-    glideGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.48);
-
-    glide.connect(glideGain);
-    glideGain.connect(ctx.destination);
-
-    glide.start(now + 0.08);
-    glide.stop(now + 0.52);
-
-  } catch (err) {
-    console.warn("Failed to play cash-out sound:", err);
-  }
+  playTransactionSound();
 }
 
 /**

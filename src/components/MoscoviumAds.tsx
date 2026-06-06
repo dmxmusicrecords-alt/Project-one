@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Megaphone, ExternalLink, Sparkles, Check, Copy, ArrowRight, Tag, Code, 
@@ -801,6 +801,10 @@ export default function MoscoviumAds({
   const [promoDurationDays, setPromoDurationDays] = useState<number>(7);
   const [customDaysValue, setCustomDaysValue] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'paypal'>('wallet');
+  const [promoDailyRate, setPromoDailyRate] = useState<number>(0.5);
+  useEffect(() => {
+    setPromoDailyRate(promoTier === 'economy' ? 0.5 : 1.0);
+  }, [promoTier]);
   
   // Simulated Card Fields
   const [cardNumber, setCardNumber] = useState('4115 8823 9940 7116');
@@ -863,8 +867,11 @@ export default function MoscoviumAds({
       return;
     }
 
-    const dailyRate = promoTier === 'economy' ? 0.50 : 1.00;
     const days = promoDurationDays;
+    const minRate = promoTier === 'economy' ? 0.5 : 1.0;
+    let dailyRate = Number(promoDailyRate) || minRate;
+    if (dailyRate < minRate) dailyRate = minRate;
+    if (dailyRate > 100) dailyRate = 100;
     const totalCost = dailyRate * days;
 
     if (isPaid && paymentMethod === 'wallet') {
@@ -1175,6 +1182,23 @@ export default function MoscoviumAds({
                       </div>
                     </div>
 
+                    {/* Daily rate custom input */}
+                    <div className="space-y-2 mt-3">
+                      <label className="block text-[11px] font-bold text-slate-655">Set Daily Rate (USD)</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number"
+                          min={promoTier === 'economy' ? 0.5 : 1.0}
+                          max={100}
+                          step={0.25}
+                          value={promoDailyRate}
+                          onChange={(e) => setPromoDailyRate(Number(e.target.value))}
+                          className="w-36 rounded-xl border border-slate-300 p-2 text-sm font-mono"
+                        />
+                        <div className="text-xs text-slate-500">Min ${promoTier === 'economy' ? '0.50' : '1.00'} — Max $100.00</div>
+                      </div>
+                    </div>
+
                     <div className="space-y-2 border-b border-slate-200/60 pb-2.5">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Settlement Method</span>
@@ -1373,7 +1397,7 @@ export default function MoscoviumAds({
                           </div>
                           <div className="border-t border-slate-150 mt-2.5 pt-1.5 flex justify-between items-center text-[10px]">
                             <span className="text-slate-400">Daily Rate</span>
-                            <span className="font-mono font-black text-red-655">$0.50</span>
+                            <span className="font-mono font-black text-red-655">${promoTier === 'economy' ? promoDailyRate.toFixed(2) : '0.50'}</span>
                           </div>
                         </label>
 
@@ -1396,7 +1420,7 @@ export default function MoscoviumAds({
                           </div>
                           <div className="border-t border-slate-150 mt-2.5 pt-1.5 flex justify-between items-center text-[10px]">
                             <span className="text-slate-400 font-bold">Daily Rate</span>
-                            <span className="font-mono font-black text-amber-600">$1.00</span>
+                            <span className="font-mono font-black text-amber-600">${promoTier === 'supreme' ? promoDailyRate.toFixed(2) : '1.00'}</span>
                           </div>
                         </label>
                       </div>
@@ -1534,13 +1558,13 @@ export default function MoscoviumAds({
                       <div className="space-y-0.5 text-left animate-fade-in animate-duration-150">
                         <span className="text-slate-400 font-bold">Payment Due Info</span>
                         <p className="font-mono text-slate-900 font-black">
-                          {promoDurationDays} days x ${promoTier === 'economy' ? '0.50' : '1.00'}/day
+                          {promoDurationDays} days x ${promoDailyRate.toFixed(2)}/day
                         </p>
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] text-slate-400 block">Total Settlement Cost</span>
                         <span className="font-mono text-[13px] font-black text-red-655">
-                          ${(promoDurationDays * (promoTier === 'economy' ? 0.50 : 1.00)).toFixed(2)} USD
+                          ${(promoDurationDays * promoDailyRate).toFixed(2)} USD
                         </span>
                       </div>
                     </div>

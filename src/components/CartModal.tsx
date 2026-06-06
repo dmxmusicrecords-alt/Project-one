@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Trash2, ShieldCheck, ArrowRight, Loader2, Key } from 'lucide-react';
 import { CartItem } from '../types';
+import { playCashOutSound, playCashInSound } from '../lib/audio';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -47,14 +48,21 @@ export default function CartModal({
     e.preventDefault();
     setCheckoutStep('processing');
     setIsProcessing(true);
+    playCashOutSound(); // Transaction initiated sound
 
     // Simulate standard global payment processing securely
     setTimeout(() => {
+      playCashInSound(); // Payment successful sound
       setIsProcessing(false);
       onCheckoutSuccess(customerName, customerEmail);
       setCheckoutStep('cart');
       onClose();
     }, 2500);
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    playCashOutSound(); // Money leaves when item removed
+    onRemoveItem(itemId);
   };
 
   return (
@@ -137,7 +145,7 @@ export default function CartModal({
                     </div>
 
                     <button 
-                      onClick={() => onRemoveItem(cartItem.item.id)}
+                      onClick={() => handleRemoveItem(cartItem.item.id)}
                       className="absolute top-3 right-3 text-slate-400 hover:text-red-600 transition-colors"
                       title="Remove item"
                     >
