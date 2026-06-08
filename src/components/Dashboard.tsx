@@ -70,6 +70,8 @@ export default function Dashboard({
   const [promoSuccess, setPromoSuccess] = useState(false);
   // Promo daily rate (USD) — default: product $0.50, shop $1.00
   const [promoDailyRate, setPromoDailyRate] = useState<number>(0.5);
+  const [promoteExternally, setPromoteExternally] = useState<boolean>(false);
+  const [externalBoostDaily, setExternalBoostDaily] = useState<number>(0);
 
   // Catalog Filter / Multi-Shop Campaign selector states
   const [selectedShopFilter, setSelectedShopFilter] = useState<string>('mine');
@@ -202,7 +204,15 @@ export default function Dashboard({
       alert(`Daily rate must be between $${minRate.toFixed(2)} and $100.00`);
       return;
     }
-    const totalCost = dailyRate * days;
+
+    const boost = promoteExternally ? Number(externalBoostDaily) : 0;
+    if (isNaN(boost) || boost < 0 || boost > 100) {
+      alert('External boost must be between $0 and $100 per day.');
+      return;
+    }
+
+    const totalDaily = Number((dailyRate + boost).toFixed(2));
+    const totalCost = totalDaily * days;
 
     if (isPaid && sellerStats.wallet < totalCost) {
       alert(`Insufficient available funds! You require ${formatPrice(totalCost)} but only possess ${formatPrice(sellerStats.wallet)} in your merchant wallet. Please list more files, complete orders or adjust campaign duration.`);
@@ -235,6 +245,8 @@ export default function Dashboard({
         clicks: 0,
         durationDays: days,
         dailyRate: dailyRate,
+        advertiseOnM11: promoteExternally,
+        externalBoostDaily: boost,
         isActive: isPaid
       };
 
@@ -1317,6 +1329,34 @@ export default function Dashboard({
                   </div>
                 </div>
 
+                {/* External advertising option for moscovium11.org */}
+                <div className="space-y-1 text-left">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={promoteExternally}
+                      onChange={(e) => setPromoteExternally(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Advertise on moscovium11.org</span>
+                  </label>
+
+                  {promoteExternally && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.25}
+                        value={externalBoostDaily}
+                        onChange={(e) => setExternalBoostDaily(Number(e.target.value))}
+                        className="w-36 rounded-xl border border-slate-300 p-2.5 text-slate-900 bg-white text-sm font-mono"
+                      />
+                      <div className="text-xs text-slate-500">Additional boost per day (USD) — Max: $100</div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-1.5 text-left">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Advertisement Slogan / Tagline</label>
                   <input 
@@ -1374,9 +1414,15 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-bold text-slate-855">Total Campaign Budget:</span>
                     <span className="font-black font-mono text-emerald-800 text-base">
-                      {formatPrice(promoDailyRate * promoDurationDays)}
+                      {formatPrice((promoDailyRate + (promoteExternally ? externalBoostDaily : 0)) * promoDurationDays)}
                     </span>
                   </div>
+                  {promoteExternally && (
+                    <div className="flex items-center justify-between text-xs text-slate-600">
+                      <span>External Boost (per day):</span>
+                      <span className="font-mono font-bold">{formatPrice(externalBoostDaily)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-[10px] pt-1.5 text-slate-500 border-t border-dashed border-amber-200">
                     <span>Available Wallet Balance:</span>
                     <span className={`font-mono font-bold ${sellerStats.wallet < (promoDailyRate * promoDurationDays) ? 'text-red-650' : 'text-emerald-700'}`}>

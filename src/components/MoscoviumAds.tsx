@@ -24,6 +24,9 @@ export interface MoscoviumAd {
   clicks: number;
   durationDays?: number;
   dailyRate?: number;
+  // Optional external advertising on moscovium11.org
+  advertiseOnM11?: boolean;
+  externalBoostDaily?: number; // additional USD/day up to $100
 }
 
 export interface MoscoviumAdsProps {
