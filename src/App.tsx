@@ -6,12 +6,13 @@ import {
   Wrench, Building, Check, ExternalLink, MessageSquare, Plus, Minus, User, Sparkles, Grid
 } from 'lucide-react';
 
-import { Item, CartItem, Order, SellerStats } from './types';
+import { Item, CartItem, Order, Seller, SellerStats } from './types';
 import { CATEGORIES, INITIAL_ITEMS, INITIAL_SELLER_STATS } from './data';
 import ItemCard from './components/ItemCard';
 import ItemDetailsModal from './components/ItemDetailsModal';
 import CartModal from './components/CartModal';
 import Dashboard from './components/Dashboard';
+import SellerAuth from './components/SellerAuth';
 import GitAssistant from './components/GitAssistant';
 import MoscoviumAds, { MoscoviumAd, INITIAL_ADS } from './components/MoscoviumAds';
 import CurrencyConverter, { CURRENCIES } from './components/CurrencyConverter';
@@ -539,9 +540,14 @@ export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [sellerStats, setSellerStats] = useState<SellerStats>(INITIAL_SELLER_STATS);
+  const [sellerUser, setSellerUser] = useState<Seller | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authError, setAuthError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'marketplace' | 'dashboard' | 'git-assistant'>('marketplace');
+  const API_BASE = ((import.meta as any).env?.VITE_API_BASE as string) ?? '';
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Hero Carousel State
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
@@ -588,6 +594,51 @@ export default function App() {
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
+  useEffect(() => {
+    async function loadBackendData() {
+      try {
+        const [itemsRes, ordersRes, statsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/items`),
+          fetch(`${API_BASE}/api/orders`),
+          fetch(`${API_BASE}/api/seller-stats`)
+        ]);
+
+        if (!itemsRes.ok || !ordersRes.ok || !statsRes.ok) {
+          throw new Error('Backend API is not available');
+        }
+
+        const [itemsData, ordersData, statsData] = await Promise.all([
+          itemsRes.json(),
+          ordersRes.json(),
+          statsRes.json()
+        ]);
+
+        setItems(itemsData);
+        setOrders(ordersData);
+        setSellerStats(statsData);
+        setApiError(null);
+      } catch (error) {
+        setApiError('Backend unavailable. The app will continue using local sample data.');
+        console.warn('Backend initialization failed:', error);
+      }
+    }
+
+    loadBackendData();
+
+    const savedSellerId = localStorage.getItem('sellerToken');
+    if (savedSellerId) {
+      fetch(`${API_BASE}/api/sellers/${encodeURIComponent(savedSellerId)}`)
+        .then((res) => res.ok ? res.json() : Promise.reject(new Error('Not found')))
+        .then((data) => {
+          setSellerUser(data);
+          setAuthError(null);
+        })
+        .catch(() => {
+          localStorage.removeItem('sellerToken');
+        });
+    }
+  }, [API_BASE]);
+
   const t = (key: string) => {
     return TRANSLATIONS[lang]?.[key] || TRANSLATIONS['en']?.[key] || key;
   };
@@ -617,7 +668,70 @@ export default function App() {
     setCartItems((prev) => prev.filter((i) => i.item.id !== itemId));
   };
 
-  const handleCheckoutSuccess = (customerName: string, customerEmail: string) => {
+  const handleSellerLogin = async (email: string, password: string) => {
+    setAuthError(null);
+    try {
+      const response = await fetch(`${API_BASE}/api/sellers/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.error || 'Login failed');
+      }
+
+      const seller = await response.json();
+      setSellerUser(seller);
+      localStorage.setItem('sellerToken', seller.id);
+      setCurrentView('dashboard');
+      setAuthMode('login');
+      setAuthError(null);
+    } catch (error: any) {
+      setAuthError(error?.message || 'Login failed.');
+      console.warn('Seller login failed:', error);
+    }
+  };
+
+  const handleSellerRegister = async (email: string, password: string, shopName: string, displayName: string) => {
+    setAuthError(null);
+    if (!shopName || !displayName) {
+      setAuthError('Please enter both shop name and display name.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/sellers/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, shopName, displayName })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.error || 'Registration failed');
+      }
+
+      const seller = await response.json();
+      setSellerUser(seller);
+      localStorage.setItem('sellerToken', seller.id);
+      setCurrentView('dashboard');
+      setAuthMode('login');
+      setAuthError(null);
+    } catch (error: any) {
+      setAuthError(error?.message || 'Registration failed.');
+      console.warn('Seller register failed:', error);
+    }
+  };
+
+  const handleSellerLogout = () => {
+    setSellerUser(null);
+    localStorage.removeItem('sellerToken');
+    setAuthError(null);
+  };
+
+  const handleCheckoutSuccess = async (customerName: string, customerEmail: string) => {
     const totalCost = cartItems.reduce((acc, item) => acc + (item.item.price * item.quantity), 0);
     const newOrder: Order = {
       id: `order-9${Math.floor(Math.random() * 900000 + 100000)}`,
@@ -629,19 +743,71 @@ export default function App() {
       customerEmail
     };
 
-    setOrders((prev) => [newOrder, ...prev]);
-    setCartItems([]);
+    try {
+      const response = await fetch(`${API_BASE}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrder)
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to save order to backend');
+      }
+
+      const savedOrder = await response.json();
+      setOrders((prev) => [savedOrder, ...prev]);
+      setCartItems([]);
+    } catch (error) {
+      console.warn('Order backend request failed:', error);
+      setOrders((prev) => [newOrder, ...prev]);
+      setCartItems([]);
+      setApiError('Order created locally. Backend order save failed.');
+    }
+
     playCashRegisterSound();
     alert(`Escrow Checkout Confirmed!\nOrder Code: ${newOrder.id}\nThank you, ${customerName}. An item access pass has been dispatched to ${customerEmail}.`);
   };
 
   // Seller Dashboard Operations
-  const handleAddListing = (newItem: Item) => {
-    setItems((prev) => [newItem, ...prev]);
+  const handleAddListing = async (newItem: Item) => {
+    const sellerId = sellerUser?.id ?? 'bestgemdiamond';
+    const sellerName = sellerUser?.shopName ?? 'Bestgemdiamond';
+    const payload = { ...newItem, sellerId, sellerName };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/sellers/${encodeURIComponent(sellerId)}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to save listing on backend');
+      }
+
+      const savedItem = await response.json();
+      setItems((prev) => [savedItem, ...prev]);
+      return savedItem;
+    } catch (error) {
+      console.warn('Add listing backend request failed:', error);
+      setItems((prev) => [payload, ...prev]);
+      setApiError('Listing created locally. Backend save failed.');
+      return payload;
+    }
   };
 
-  const handleRemoveListing = (itemId: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+  const handleRemoveListing = async (itemId: string) => {
+    const sellerId = sellerUser?.id ?? 'bestgemdiamond';
+    try {
+      await fetch(`${API_BASE}/api/sellers/${encodeURIComponent(sellerId)}/items/${encodeURIComponent(itemId)}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.warn('Delete listing backend request failed:', error);
+      setApiError('Unable to delete listing from backend. Removed locally.');
+    } finally {
+      setItems((prev) => prev.filter((i) => i.id !== itemId));
+    }
   };
 
   // Support Chat simulator auto-answers
@@ -833,6 +999,30 @@ export default function App() {
                 <span>{t('contactUs')}</span>
               </button>
             </nav>
+
+            {sellerUser ? (
+              <div className="hidden md:flex items-center gap-3 border-l border-slate-200 pl-3">
+                <div className="text-right text-xs">
+                  <p className="font-bold text-slate-900">{sellerUser.displayName}</p>
+                  <p className="text-slate-500">{sellerUser.shopName}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSellerLogout}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setCurrentView('dashboard'); setAuthMode('login'); }}
+                className="hidden md:inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Sign In
+              </button>
+            )}
 
             {/* Cart Header button */}
             <button 
@@ -1142,18 +1332,30 @@ export default function App() {
         {/* Dashboard View */}
         {currentView === 'dashboard' && (
           <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
-            <Dashboard 
-              items={items}
-              orders={orders}
-              sellerStats={sellerStats}
-              onAddListing={handleAddListing}
-              onRemoveListing={handleRemoveListing}
-              onUpdateStats={setSellerStats}
-              currency={activeCurrency}
-              ads={ads}
-              onAddAd={(newAd) => setAds((prev) => [newAd, ...prev])}
-              onUpdateAds={setAds}
-            />
+            {!sellerUser ? (
+              <SellerAuth
+                authMode={authMode}
+                onModeChange={setAuthMode}
+                onLogin={handleSellerLogin}
+                onRegister={handleSellerRegister}
+                authError={authError}
+                sellerUser={sellerUser}
+              />
+            ) : (
+              <Dashboard 
+                items={items}
+                orders={orders}
+                sellerStats={sellerStats}
+                seller={sellerUser}
+                onAddListing={handleAddListing}
+                onRemoveListing={handleRemoveListing}
+                onUpdateStats={setSellerStats}
+                currency={activeCurrency}
+                ads={ads}
+                onAddAd={(newAd) => setAds((prev) => [newAd, ...prev])}
+                onUpdateAds={setAds}
+              />
+            )}
           </section>
         )}
 

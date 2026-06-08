@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "server": "tsx server.ts",
+    "serve": "npm run build && npm run server",
     "lint": "tsc --noEmit",
     "predeploy": "vite build",
     "deploy": "gh-pages -d dist"

@@ -1,0 +1,246 @@
+{
+  "items": [
+    {
+      "id": "rtx-5090-gigabyte",
+      "title": "GIGABYTE GeForce RTX 5090 Gaming OC 32G Graphics Card",
+      "price": 2606.95,
+      "originalPrice": 3067,
+      "category": "Electronics",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80",
+      "description": "Next-generation architectural power with 32GB of ultra-fast GDDR7 memory. Featuring state-of-the-art Ray Tracing cores and intelligent AI DLSS super-sampling. Built with GIGABYTE WINDForce cooling system with nested fans, custom heat-pipes, and a robust physical aluminum backplate to deliver absolute thermal supremacy under peak gaming or rendering workloads.",
+      "rating": 4.9,
+      "reviewsCount": 27,
+      "sellerName": "Tech & Gadgets",
+      "sellerId": "tech-gadgets",
+      "isPopular": true,
+      "createdAt": "2026-05-15T08:00:00Z"
+    },
+    {
+      "id": "hand-carved-giraffe",
+      "title": "Hand Carved Giraffe & Baby Original Kamba Tribal Coffee Table Sculpture",
+      "price": 270,
+      "originalPrice": 300,
+      "category": "Art & Collectibles",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&w=600&q=80",
+      "description": "Bespoke original sculpture hand-carved in Machakos, Kenya, by seasoned Kamba artisans. Sculpted out of premium single-piece dry African mahogany wood. Features intricate textured details representing maternal connection, finished with safe organic dark wood oils to preserve the raw, editorial luster. Ideal as floor art, shelf centerpiece or statement living room decor.",
+      "rating": 5,
+      "reviewsCount": 20,
+      "sellerName": "Bestgemdiamond",
+      "sellerId": "bestgemdiamond",
+      "isPopular": true,
+      "isRecommended": true,
+      "createdAt": "2026-04-20T10:30:00Z"
+    },
+    {
+      "id": "macro-keypad-stream",
+      "title": "VSDINSIDE Macro Keypad, Custom 12-Key Mechanical Stream Controller",
+      "price": 50.15,
+      "originalPrice": 59,
+      "category": "Electronics",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=600&q=80",
+      "description": "Boost your digital workflow with this fully programable mechanical shortcut controller. Outfitted with 12 hot-swappable tactile blue switch keys and 3 master rotary click-dials. Configurable via open-source desktop soft-link for instant OBS integration, Premiere Pro timeline controls, or macro command sequences. Encased in clear sandblasted premium acrylic with dynamic ambient RGB baseplates.",
+      "rating": 4.8,
+      "reviewsCount": 14,
+      "sellerName": "Tech & Gadgets",
+      "sellerId": "tech-gadgets",
+      "isRecommended": true,
+      "createdAt": "2026-05-10T12:00:00Z"
+    },
+    {
+      "id": "carote-nonstick-cookware",
+      "title": "CAROTE Nonstick Pots and Pans Induction Kitchen Cookware Set (16pcs)",
+      "price": 160.65,
+      "originalPrice": 189,
+      "category": "Home/Office/Lifestyle",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=600&q=80",
+      "description": "Eco-friendly Swiss granite stone-engineered nonstick cookware safe for premium induction, gas, and halogen cooktops. Complete 16-piece kitchen catalog includes dynamic saucepans, master frying skillets, custom deep casserole pots, reusable custom storage lids, and protective heat-pads. PFOS and PFOA toxic micro-chemical free.",
+      "rating": 4.7,
+      "reviewsCount": 38,
+      "sellerName": "FAITHKIM ART AND CURIO SHOP",
+      "sellerId": "faithkim-curio",
+      "isPopular": true,
+      "createdAt": "2026-05-01T09:15:00Z"
+    },
+    {
+      "id": "starlink-install-services",
+      "title": "Professional Home Starlink Terminal Installation and Calibration Service",
+      "price": 87.3,
+      "originalPrice": 120,
+      "category": "Services",
+      "type": "service",
+      "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80",
+      "description": "Get absolute reliability from your Starlink hardware. Our tech assistance provides fully localized roof-mounting placement, custom alignment tracking to reduce orbital ping issues, premium weatherproof high-grade coaxial cable runs, and inner router Wi-Fi mesh optimization for ultra-wide residential structures. Service available in-person or via guided digital session.",
+      "rating": 4.9,
+      "reviewsCount": 11,
+      "sellerName": "Tech & Gadgets",
+      "sellerId": "tech-gadgets",
+      "createdAt": "2026-04-18T14:45:00Z"
+    },
+    {
+      "id": "ai-prompting-ebook",
+      "title": "The Blueprint: Guided Workflows and Prompt Engineering for daily AI Automation",
+      "price": 3.4,
+      "originalPrice": 4,
+      "category": "Digital Downloads",
+      "type": "digital",
+      "image": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
+      "description": "Instantly download our master playbook showing you the exact workflows and prompt engineering structures to automate up to 40% of digital chores. Perfect for entrepreneurs, copywriters, and developers. Includes standard API copyable templates, variables definitions, and complete custom system pre-prompt architectures for LLMs.",
+      "rating": 4.9,
+      "reviewsCount": 52,
+      "sellerName": "African Digital Art",
+      "sellerId": "african-digital-art",
+      "isPopular": true,
+      "isRecommended": true,
+      "createdAt": "2026-05-24T18:20:00Z"
+    },
+    {
+      "id": "maasai-traditional-shield",
+      "title": "Authentic Maasai Painted Cowhide Leather Shield Wall Accent (Big 5 Safari)",
+      "price": 86.4,
+      "originalPrice": 96,
+      "category": "Art & Collectibles",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?auto=format&fit=crop&w=600&q=80",
+      "description": "Beautiful traditional warrior wall-hanging shield, manually painted using natural pigments on genuine sustainably-sourced cowhide leather frames. Stretched over robust wild wood struts. Rich geometric patterns reflect safety, power, and heritage. Sourced directly from local Maasai community cooperatives near Narok, Kenya.",
+      "rating": 5,
+      "reviewsCount": 8,
+      "sellerName": "SHEE CRAFTS & ANTIQUES SHOP",
+      "sellerId": "shee-crafts",
+      "createdAt": "2026-05-18T11:00:00Z"
+    },
+    {
+      "id": "tanzania-raw0-ruby",
+      "title": "Untreated 8.8ct Translucent Earth-Mined Tanzanian Red Ruby Specimen",
+      "price": 40050,
+      "originalPrice": 44500,
+      "category": "Art & Collectibles",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80",
+      "description": "Stellar collector specimen of raw, untreated, translucent high-grade red ruby gemstone extracted from the mineral-heavy regions of Tanzania. Exceptional natural light refractions. Weighing precisely 8.8 carats, resembling a compact boxing glove structure, this museum-grade raw mineral is pristine for bespoke jewelry or high-value physical asset portfolios.",
+      "rating": 4.8,
+      "reviewsCount": 3,
+      "sellerName": "Bestgemdiamond",
+      "sellerId": "bestgemdiamond",
+      "createdAt": "2026-05-02T16:00:00Z"
+    },
+    {
+      "id": "custom-web-dev",
+      "title": "High-Fidelity Custom Web Application Development (MERN/Vite Stack)",
+      "price": 1500,
+      "category": "Services",
+      "type": "service",
+      "image": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80",
+      "description": "Create a state-of-the-art secure platform that scales beautifully. Our full-stack engineering service delivers a personalized, lightning-fast React SPAs with Node/Express servers, persistent SQL/Firestore databases, client side animations, mobile responsiveness, and payment gateway support. Post-launch support and full code exports are included.",
+      "rating": 5,
+      "reviewsCount": 15,
+      "sellerName": "Bestgemdiamond",
+      "sellerId": "bestgemdiamond",
+      "isRecommended": true,
+      "createdAt": "2026-05-20T07:15:00Z"
+    },
+    {
+      "id": "luxury-tesla-chauffeur",
+      "title": "Premium Local Electric Chauffeur Travel Pass (Airport or Day-Trip)",
+      "price": 191.25,
+      "category": "Services",
+      "type": "service",
+      "image": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=600&q=80",
+      "description": "Premium Tesla Model S chauffeur travel pass valid for localized high-comfort business or leisure trips. Includes clean zero-emissions navigation, master route planning to avoid peak traffic segments, integrated physical workspace tables with USB charging nodes, customized ambient music systems, and secure professional driver service.",
+      "rating": 5,
+      "reviewsCount": 19,
+      "sellerName": "BOUGAIN CRAFT",
+      "sellerId": "bougain-craft",
+      "createdAt": "2026-05-21T09:00:00Z"
+    },
+    {
+      "id": "handwoven-sisal-tote",
+      "title": "BOUGAIN Premium Sisal Woven Tote Bag with Authentic Leather Handles",
+      "price": 100,
+      "category": "Fashion/Beauty",
+      "type": "product",
+      "image": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80",
+      "description": "Stunning organic handbag manually woven out of rugged sisal fibers from local estates in Bougainville. Reinforced with double-stitch dark brown top-grain leather straps. Elegant design, durable pattern carrying up to 15kg easily. Features internal lined cotton pockets with custom zippers to secure cash and devices.",
+      "rating": 4.9,
+      "reviewsCount": 9,
+      "sellerName": "BOUGAIN CRAFT",
+      "sellerId": "bougain-craft",
+      "isRecommended": true,
+      "createdAt": "2026-05-22T10:00:00Z"
+    },
+    {
+      "id": "digital-planner-2025",
+      "title": "Unisex Hand-Lettered Minimalist Digital iPad Daily Planner Template",
+      "price": 1.7,
+      "originalPrice": 2,
+      "category": "Digital Downloads",
+      "type": "digital",
+      "image": "https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=600&q=80",
+      "description": "An elegantly formatted minimal digital daily notebook optimized for PDF markup apps like GoodNotes, Notability, and CollaNote on iPad. Comprises 365 linked master schedule pages, budget spreadsheets, daily task lists, dietary tracking frames, and a clean minimalist aesthetic designed to keep your mind clear.",
+      "rating": 4.9,
+      "reviewsCount": 125,
+      "sellerName": "African Digital Art",
+      "sellerId": "african-digital-art",
+      "isPopular": true,
+      "createdAt": "2026-05-27T08:00:00Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "order-1780945715.67253",
+      "items": [
+        {
+          "quantity": 1,
+          "item": {
+            "id": "rtx-5090-gigabyte",
+            "title": "GIGABYTE GeForce RTX 5090 Gaming OC 32G Graphics Card",
+            "price": 2606.95,
+            "originalPrice": 3067,
+            "category": "Electronics",
+            "type": "product",
+            "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80",
+            "description": "Next-generation architectural power with 32GB of ultra-fast GDDR7 memory. Featuring state-of-the-art Ray Tracing cores and intelligent AI DLSS super-sampling. Built with GIGABYTE WINDForce cooling system with nested fans, custom heat-pipes, and a robust physical aluminum backplate to deliver absolute thermal supremacy under peak gaming or rendering workloads.",
+            "rating": 4.9,
+            "reviewsCount": 27,
+            "sellerName": "Tech & Gadgets",
+            "sellerId": "tech-gadgets",
+            "isPopular": true,
+            "createdAt": "2026-05-15T08:00:00Z"
+          }
+        }
+      ],
+      "total": 2606.95,
+      "status": "Completed",
+      "date": "2026-06-08T19:08:35.6910628+03:00",
+      "customerName": "Test Buyer",
+      "customerEmail": "test@example.com"
+    }
+  ],
+  "sellers": [
+    {
+      "id": "bestgemdiamond",
+      "email": "seller@bestgemdiamond.com",
+      "password": "password123",
+      "shopName": "Bestgemdiamond",
+      "displayName": "Bestgemdiamond",
+      "createdAt": "2026-06-08T16:01:42.415Z"
+    }
+  ],
+  "sellerStats": {
+    "bestgemdiamond": {
+      "earnings": 84215.32,
+      "wallet": 1154.45,
+      "completedOrders": 324,
+      "withdrawals": []
+    },
+    "tech-gadgets": {
+      "earnings": 2606.95,
+      "wallet": 2606.95,
+      "completedOrders": 1,
+      "withdrawals": []
+    }
+  }
+}

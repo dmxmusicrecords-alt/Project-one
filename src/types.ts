@@ -31,6 +31,15 @@ export interface Order {
   customerEmail: string;
 }
 
+export interface Seller {
+  id: string;
+  email: string;
+  password?: string;
+  shopName: string;
+  displayName: string;
+  createdAt: string;
+}
+
 export interface WithdrawalRequest {
   id: string;
   amount: number;

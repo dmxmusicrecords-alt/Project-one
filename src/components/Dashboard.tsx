@@ -3,14 +3,15 @@ import {
   Wallet, DollarSign, PlusCircle, Grid, FileText, CheckCircle, 
   Calendar, TrendingUp, Send, AlertCircle, Trash2, ArrowUpRight, Megaphone, X, CreditCard, Save
 } from 'lucide-react';
-import { Item, SellerStats, WithdrawalRequest, Order } from '../types';
+import { Item, Seller, SellerStats, WithdrawalRequest, Order } from '../types';
 import { CATEGORIES } from '../data';
-import { playCashInSound, playCashOutSound } from '../lib/audio';
+import { playCashInSound, playCashOutSound, playCashRegisterSound, playNotificationSound } from '../lib/audio';
 import { MoscoviumAd } from './MoscoviumAds';
 
 interface DashboardProps {
   items: Item[];
   orders: Order[];
+  seller: Seller;
   sellerStats: SellerStats;
   onAddListing: (newItem: Item) => void;
   onRemoveListing: (itemId: string) => void;
@@ -24,6 +25,7 @@ interface DashboardProps {
 export default function Dashboard({
   items,
   orders,
+  seller,
   sellerStats,
   onAddListing,
   onRemoveListing,
@@ -137,6 +139,8 @@ export default function Dashboard({
 
     const origPriceNum = newOrigPrice ? parseFloat(newOrigPrice) : undefined;
 
+    const sellerName = seller?.shopName || 'Bestgemdiamond';
+    const sellerId = seller?.id || 'bestgemdiamond';
     const newItem: Item = {
       id: `item-${Date.now()}`,
       title: newTitle,
@@ -148,8 +152,8 @@ export default function Dashboard({
       description: newDesc,
       rating: 5.0,
       reviewsCount: 0,
-      sellerName: 'Bestgemdiamond (Your Shop)',
-      sellerId: 'bestgemdiamond',
+      sellerName,
+      sellerId,
       createdAt: new Date().toISOString()
     };
 
@@ -262,8 +266,8 @@ export default function Dashboard({
     handleConfirmPromotionWithChoice(true);
   };
 
-  // Filter items specifically created by this main mock user
-  const userItems = items.filter(item => item.sellerId === 'bestgemdiamond');
+  // Filter items specifically created by the current authenticated seller
+  const userItems = items.filter(item => item.sellerId === seller?.id);
 
   // Dynamic filter for shop and products to advertise
   const activeShops = Array.from(new Set(items.map(item => item.sellerName || 'Anonymous Shop'))).filter(Boolean);

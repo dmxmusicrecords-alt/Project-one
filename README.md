@@ -71,6 +71,20 @@ npm run dev
 npm run build
 ```
 
+## 🧩 Backend Server
+
+This project now includes a simple Express backend API for item uploads and order persistence.
+
+```bash
+# Run the backend server
+npm run server
+
+# Build the frontend and serve the production app together
+npm run serve
+```
+
+Open the app at `http://localhost:4000` when the backend server is running.
+
 ---
 
 *Crafted masterfully for Moscovium115.*
