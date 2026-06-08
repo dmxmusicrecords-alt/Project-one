@@ -35,6 +35,7 @@ export interface Seller {
   id: string;
   email: string;
   password?: string;
+  token?: string;
   shopName: string;
   displayName: string;
   createdAt: string;

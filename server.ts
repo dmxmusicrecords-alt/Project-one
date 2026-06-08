@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import multer from 'multer';
+import fsSync from 'fs';
 import { INITIAL_ITEMS } from './src/data';
 import { Item, Order, Seller, SellerStats } from './src/types';
 
@@ -9,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_STORE_PATH = path.join(__dirname, 'data-store.json');
 const DIST_PATH = path.join(__dirname, 'dist');
+const PUBLIC_UPLOADS = path.join(__dirname, 'public', 'assets', 'uploads');
 
 const DEFAULT_SELLER: Seller = {
   id: 'bestgemdiamond',
@@ -47,6 +50,24 @@ async function ensureStore(): Promise<void> {
     await fs.writeFile(DATA_STORE_PATH, JSON.stringify(DEFAULT_STORE, null, 2), 'utf-8');
   }
 }
+
+// ensure uploads directory exists
+try {
+  fsSync.mkdirSync(PUBLIC_UPLOADS, { recursive: true });
+} catch (err) {
+  // ignore
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, PUBLIC_UPLOADS);
+  },
+  filename: function (req, file, cb) {
+    const safe = `${Date.now()}-${file.originalname.replace(/[^a-z0-9.\-]/gi, '-')}`;
+    cb(null, safe);
+  }
+});
+const upload = multer({ storage });
 
 function normalizeSellerStats(rawStats: any): Record<string, SellerStats> {
   if (!rawStats || typeof rawStats !== 'object') {
@@ -103,6 +124,15 @@ app.get('/api/items', async (req, res) => {
     return res.json(store.items.filter((item) => item.sellerId === sellerId));
   }
   res.json(store.items);
+});
+
+// Image upload endpoint for sellers
+app.post('/api/upload-image', upload.single('image'), async (req, res) => {
+  const r = req as any;
+  if (!r.file) return res.status(400).json({ error: 'No file uploaded.' });
+  // Return a public URL for the uploaded asset
+  const url = `/assets/uploads/${r.file.filename}`;
+  res.json({ url });
 });
 
 app.post('/api/items', async (req, res) => {
@@ -183,6 +213,9 @@ app.post('/api/sellers/register', async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
+  // generate a simple token for the seller session
+  (newSeller as any).token = `t_${Math.random().toString(36).slice(2, 12)}_${Date.now()}`;
+
   store.sellers.push(newSeller);
   store.sellerStats[newSeller.id] = {
     earnings: 0,
@@ -208,8 +241,12 @@ app.post('/api/sellers/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
 
-  const { password: _password, ...safeSeller } = seller;
-  res.json(safeSeller);
+  // generate/update token and return with safe seller info
+  const token = `t_${Math.random().toString(36).slice(2, 12)}_${Date.now()}`;
+  seller.token = token;
+  await saveStore(store);
+  const { password: _password, ...safeSeller } = seller as any;
+  res.json({ ...safeSeller, token });
 });
 
 app.get('/api/sellers/:sellerId/items', async (req, res) => {
@@ -222,11 +259,20 @@ app.get('/api/sellers/:sellerId/items', async (req, res) => {
 app.post('/api/sellers/:sellerId/items', async (req, res) => {
   const { title, price, originalPrice, category, type, image, description } = req.body;
   const sellerId = req.params.sellerId;
-
   const store = await loadStore();
   const seller = store.sellers.find((s) => s.id === sellerId);
   if (!seller) {
     return res.status(404).json({ error: 'Seller not found.' });
+  }
+
+  // Simple token auth: require Authorization: Bearer <token>
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing Authorization header.' });
+  }
+  const token = auth.split(' ')[1];
+  if (!token || seller.token !== token) {
+    return res.status(403).json({ error: 'Invalid or expired token.' });
   }
 
   if (!title || !price || !category || !type || !description) {
@@ -349,6 +395,9 @@ app.get('/api/seller-stats', async (req, res) => {
   const store = await loadStore();
   res.json(store.sellerStats);
 });
+
+// Serve uploaded assets before serving built static files
+app.use('/assets/uploads', express.static(PUBLIC_UPLOADS));
 
 app.use(express.static(DIST_PATH));
 
