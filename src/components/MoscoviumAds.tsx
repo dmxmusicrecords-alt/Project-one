@@ -826,6 +826,14 @@ export default function MoscoviumAds({
     txId: string;
     tier: string;
   } | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const paymentSectionRef = React.useRef<HTMLDivElement>(null);
+
+  const handlePaymentScroll = () => {
+    if (paymentSectionRef.current) {
+      paymentSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const activeAds = ads.filter(a => a.isActive !== false);
   const currentAd = activeAds[currentAdIdx] || activeAds[0] || ads[0];
@@ -1115,7 +1123,10 @@ export default function MoscoviumAds({
               </div>
 
               {/* Body container with scroll capabilities */}
-              <div className="p-4 overflow-y-auto">
+              <div className="p-4 overflow-y-auto relative" onScroll={(e) => {
+                const element = e.currentTarget;
+                setShowScrollButton(element.scrollTop > 100);
+              }}>
                 {isProcessingPayment ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
                   <div className="relative">
@@ -1252,6 +1263,21 @@ export default function MoscoviumAds({
                       <span>{adT(adFormError) || adFormError}</span>
                     </div>
                   )}
+
+                  {/* Quick Payment Navigation Hint */}
+                  <div className="p-2.5 mb-3 bg-amber-50 border border-amber-200/50 rounded-xl flex items-center justify-between text-[10px] font-sans">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                      <span className="text-amber-800 font-semibold">💡 Scroll down to see payment options and complete your ad deployment</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handlePaymentScroll}
+                      className="text-amber-700 hover:text-amber-900 font-bold text-xs underline ml-2 shrink-0"
+                    >
+                      Jump →
+                    </button>
+                  </div>
 
                   <form onSubmit={handlePublishAd} className="space-y-4 text-xs font-medium text-slate-700 max-h-[70vh] overflow-y-auto pr-1">
                     <div className="grid grid-cols-2 gap-3 animate-fade-in">
@@ -1557,7 +1583,7 @@ export default function MoscoviumAds({
                     )}
 
                     {/* Summary fee block and Submit button */}
-                    <div className="bg-slate-50 rounded-2xl p-3 border border-slate-150 flex items-center justify-between text-xs font-sans">
+                    <div ref={paymentSectionRef} id="payment-section" className="bg-slate-50 rounded-2xl p-3 border border-slate-150 flex items-center justify-between text-xs font-sans scroll-mt-4">
                       <div className="space-y-0.5 text-left animate-fade-in animate-duration-150">
                         <span className="text-slate-400 font-bold">Payment Due Info</span>
                         <p className="font-mono text-slate-900 font-black">
@@ -1594,6 +1620,23 @@ export default function MoscoviumAds({
                 </>
               )}
               </div>
+
+              {/* Floating Scroll to Payment Button */}
+              <AnimatePresence>
+                {!isProcessingPayment && !isPaymentSuccess && showScrollButton && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    onClick={handlePaymentScroll}
+                    className="absolute bottom-6 right-4 z-50 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-full transition-all shadow-lg active:scale-95 text-xs animate-bounce-soft"
+                    title="Scroll to Payment Section"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    <span>To Payment</span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </motion.div>
           </div>
         )}
