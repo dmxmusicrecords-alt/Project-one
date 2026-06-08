@@ -1,11 +1,16 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import multer from 'multer';
 import fsSync from 'fs';
+import jwt from 'jsonwebtoken';
+import sharp from 'sharp';
 import { INITIAL_ITEMS } from './src/data';
 import { Item, Order, Seller, SellerStats } from './src/types';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +63,7 @@ try {
   // ignore
 }
 
+// Multer with validation and size limit
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, PUBLIC_UPLOADS);
@@ -67,7 +73,14 @@ const storage = multer.diskStorage({
     cb(null, safe);
   }
 });
-const upload = multer({ storage });
+
+const fileFilter = (req: any, file: any, cb: any) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(file.mimetype)) return cb(new Error('Unsupported file type'), false);
+  cb(null, true);
+};
+
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 function normalizeSellerStats(rawStats: any): Record<string, SellerStats> {
   if (!rawStats || typeof rawStats !== 'object') {
@@ -117,22 +130,87 @@ async function saveStore(store: Store): Promise<void> {
 const app = express();
 app.use(express.json());
 
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password123';
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'local-admin-jwt-secret';
+const ADMIN_JWT_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '2h';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+
+if (!process.env.ADMIN_JWT_SECRET) {
+  console.warn('WARNING: No ADMIN_JWT_SECRET env var set — using local secret. Set ADMIN_JWT_SECRET in production to secure admin login.');
+}
+if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+  console.warn('WARNING: No ADMIN_USERNAME/ADMIN_PASSWORD env vars set — using default credentials. Set them in production.');
+}
+
+function requireAdmin(req: any, res: any, next: any) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing Authorization header.' });
+  }
+  const token = auth.split(' ')[1];
+  let verified = false;
+  try {
+    const payload = jwt.verify(token, ADMIN_JWT_SECRET as jwt.Secret) as { role?: string };
+    if (payload?.role === 'admin') {
+      verified = true;
+    }
+  } catch {
+    // ignore - token might be invalid
+  }
+
+  if (!verified && ADMIN_TOKEN && token === ADMIN_TOKEN) {
+    verified = true;
+  }
+
+  if (!verified) {
+    return res.status(403).json({ error: 'Invalid or expired admin token.' });
+  }
+  return next();
+}
+
+function createAdminToken() {
+  const signOptions: jwt.SignOptions = {
+    expiresIn: ADMIN_JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+  };
+  return jwt.sign({ role: 'admin', username: ADMIN_USERNAME }, ADMIN_JWT_SECRET as jwt.Secret, signOptions);
+}
+
 app.get('/api/items', async (req, res) => {
   const store = await loadStore();
   const sellerId = req.query.sellerId?.toString();
   if (sellerId) {
     return res.json(store.items.filter((item) => item.sellerId === sellerId));
   }
-  res.json(store.items);
+  // Only return items that are approved or legacy items without the flag
+  res.json(store.items.filter((item) => item.approved !== false));
 });
 
 // Image upload endpoint for sellers
 app.post('/api/upload-image', upload.single('image'), async (req, res) => {
   const r = req as any;
   if (!r.file) return res.status(400).json({ error: 'No file uploaded.' });
-  // Return a public URL for the uploaded asset
-  const url = `/assets/uploads/${r.file.filename}`;
-  res.json({ url });
+
+  const filepath = path.join(PUBLIC_UPLOADS, r.file.filename);
+  try {
+    // create a resized main image and a thumbnail
+    const resizedPath = path.join(PUBLIC_UPLOADS, `resized-${r.file.filename}`);
+    const thumbPath = path.join(PUBLIC_UPLOADS, `thumb-${r.file.filename}`);
+
+    await sharp(filepath).resize({ width: 1200, withoutEnlargement: true }).toFile(resizedPath);
+    await sharp(filepath).resize({ width: 400 }).toFile(thumbPath);
+
+    // remove original and use resized as canonical
+    fsSync.unlinkSync(filepath);
+    fsSync.renameSync(resizedPath, filepath);
+
+    const url = `/assets/uploads/${r.file.filename}`;
+    const thumbUrl = `/assets/uploads/thumb-${r.file.filename}`;
+    res.json({ url, thumbUrl });
+  } catch (err) {
+    console.error('Image processing failed', err);
+    return res.status(500).json({ error: 'Image processing failed.' });
+  }
 });
 
 app.post('/api/items', async (req, res) => {
@@ -162,8 +240,15 @@ app.post('/api/items', async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
+  // New public items require approval
+  (newItem as any).approved = false;
+
   const store = await loadStore();
   store.items.unshift(newItem);
+  // ensure seller-created items are pending approval
+  if ((newItem as any).sellerId) {
+    (newItem as any).approved = false;
+  }
   await saveStore(store);
   res.status(201).json(newItem);
 });
@@ -298,6 +383,49 @@ app.post('/api/sellers/:sellerId/items', async (req, res) => {
   store.items.unshift(newItem);
   await saveStore(store);
   res.status(201).json(newItem);
+});
+
+// Admin login route
+app.post('/api/admin/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Missing username or password.' });
+  }
+
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid admin credentials.' });
+  }
+
+  const token = createAdminToken();
+  res.json({ token, expiresIn: ADMIN_JWT_EXPIRES_IN });
+});
+
+// Admin endpoints for moderation
+app.get('/api/admin/pending-items', requireAdmin, async (req, res) => {
+  const store = await loadStore();
+  const pending = store.items.filter((i) => i.approved === false);
+  res.json(pending);
+});
+
+app.post('/api/admin/items/:itemId/approve', requireAdmin, async (req, res) => {
+  const store = await loadStore();
+  const itemId = req.params.itemId;
+  const item = store.items.find((i) => i.id === itemId);
+  if (!item) return res.status(404).json({ error: 'Item not found' });
+  item.approved = true;
+  await saveStore(store);
+  res.json({ success: true, item });
+});
+
+app.post('/api/admin/items/:itemId/reject', requireAdmin, async (req, res) => {
+  const store = await loadStore();
+  const itemId = req.params.itemId;
+  const index = store.items.findIndex((i) => i.id === itemId);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+  // remove the item
+  const removed = store.items.splice(index, 1)[0];
+  await saveStore(store);
+  res.json({ success: true, removed });
 });
 
 app.delete('/api/sellers/:sellerId/items/:itemId', async (req, res) => {

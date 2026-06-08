@@ -11,6 +11,7 @@ export interface Item {
   reviewsCount: number;
   sellerName: string;
   sellerId: string;
+  approved?: boolean;
   isPopular?: boolean;
   isRecommended?: boolean;
   createdAt: string;

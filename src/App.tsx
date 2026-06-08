@@ -14,6 +14,7 @@ import CartModal from './components/CartModal';
 import Dashboard from './components/Dashboard';
 import SellerAuth from './components/SellerAuth';
 import GitAssistant from './components/GitAssistant';
+import AdminPanel from './components/AdminPanel';
 import MoscoviumAds, { MoscoviumAd, INITIAL_ADS } from './components/MoscoviumAds';
 import CurrencyConverter, { CURRENCIES } from './components/CurrencyConverter';
 import { playCashRegisterSound, playNotificationSound } from './lib/audio';
@@ -545,7 +546,7 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'marketplace' | 'dashboard' | 'git-assistant'>('marketplace');
+  const [currentView, setCurrentView] = useState<'marketplace' | 'dashboard' | 'git-assistant' | 'admin'>('marketplace');
   const API_BASE = ((import.meta as any).env?.VITE_API_BASE as string) ?? '';
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -998,6 +999,14 @@ export default function App() {
                 <GitBranch className="h-3.5 w-3.5" />
                 <span>{t('contactUs')}</span>
               </button>
+              <button 
+                onClick={() => setCurrentView('admin')}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold font-sans transition-all cursor-pointer ${
+                  currentView === 'admin' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                Admin
+              </button>
             </nav>
 
             {sellerUser ? (
@@ -1356,6 +1365,13 @@ export default function App() {
                 onUpdateAds={setAds}
               />
             )}
+          </section>
+        )}
+
+        {/* Admin View */}
+        {currentView === 'admin' && (
+          <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
+            <AdminPanel />
           </section>
         )}
 
