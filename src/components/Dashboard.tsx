@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Wallet, DollarSign, PlusCircle, Grid, FileText, CheckCircle, 
   Calendar, TrendingUp, Send, AlertCircle, Trash2, ArrowUpRight, Megaphone, X, CreditCard, Save
@@ -68,6 +68,7 @@ export default function Dashboard({
   const [promoDesc, setPromoDesc] = useState('');
   const [promoCta, setPromoCta] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(false);
+  const promoFormRef = useRef<HTMLDivElement | null>(null);
   // Promo daily rate (USD) — default: product $0.50, shop $1.00
   const [promoDailyRate, setPromoDailyRate] = useState<number>(0.5);
   const [promoteExternally, setPromoteExternally] = useState<boolean>(false);
@@ -186,6 +187,12 @@ export default function Dashboard({
     setPromoSuccess(false);
     // ensure daily rate default aligns with promo type
     setPromoDailyRate(0.5);
+    // scroll the promotion form into view for quick access to payment
+    setTimeout(() => {
+      promoFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const firstInput = promoFormRef.current?.querySelector('input, textarea, select') as HTMLElement | null;
+      firstInput?.focus();
+    }, 150);
   };
 
   useEffect(() => {
@@ -1228,7 +1235,8 @@ export default function Dashboard({
                 <p className="text-xs text-slate-500 max-w-xs mx-auto">Your customized promotional campaign was set active on the Moscovium115 Sponsors array. Campaign cost deducted from your available seller balances.</p>
               </div>
             ) : (
-              <form onSubmit={handleConfirmPromotion} className="space-y-4 text-xs font-medium text-slate-700">
+              <div ref={promoFormRef} id="promotion-form">
+                <form onSubmit={handleConfirmPromotion} className="space-y-4 text-xs font-medium text-slate-700">
                 {/* Promo Scope Choice */}
                 <div className="space-y-1.5 text-left">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Campaign Scope Type</label>
@@ -1451,7 +1459,8 @@ export default function Dashboard({
                     <span>Pay & Launch</span>
                   </button>
                 </div>
-              </form>
+                </form>
+              </div>
             )}
           </div>
         </div>
