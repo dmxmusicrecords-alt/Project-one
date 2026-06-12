@@ -4,9 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Moscovium115 | Products, Services & Digital Downloads from Across the Globe</title>
+    <script>
+      window.__ENV__ = {
+        VITE_API_BASE: '',
+        VITE_GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID'
+      };
+
+      if (!window.__ENV__.VITE_API_BASE) {
+        window.__ENV__.VITE_API_BASE = window.location.origin;
+      }
+    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="/src/main.tsx"></script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+
   </body>
 </html>
